@@ -21,7 +21,7 @@ public class RestClientConfig {
                 .requestFactory(requestFactory(cfg.connectTimeout(), cfg.readTimeout()))
                 .baseUrl(cfg.baseUrl())
                 .defaultHeader("Accept", "application/json")
-                .defaultHeader("User-Agent", "discgolfbagtips-api/0.1 (+https://discgolfbagtips.com)")
+                .defaultHeader("User-Agent", "discgolfbagtips-business/0.1 (+https://discgolfbagtips.com)")
                 .build();
     }
 

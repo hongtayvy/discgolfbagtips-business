@@ -36,7 +36,7 @@ Note the username form: the pooler needs `postgres.<project-ref>`, not bare `pos
 ## 4. Boot it
 
 ```bash
-java -jar target/discgolfbagtips-api-0.1.0-SNAPSHOT.jar
+java -jar target/discgolfbagtips-business-0.1.0-SNAPSHOT.jar
 ```
 
 Expect, in order: Flyway applying 8 migrations, then the catalog sync firing because `disc` is empty

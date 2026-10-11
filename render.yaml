@@ -7,7 +7,7 @@
 # reachable from Render, so EMBEDDING_PROVIDER is pinned rather than left on `auto`.
 services:
   - type: web
-    name: discgolfbagtips-api
+    name: discgolfbagtips-business
     runtime: docker
     plan: free
     region: oregon
@@ -65,7 +65,7 @@ services:
         value: none
       # Makes Swagger's "Try it out" hit the deployed host rather than localhost.
       - key: PUBLIC_BASE_URL
-        value: https://discgolfbagtips-api.onrender.com
+        value: https://discgolfbagtips-business.onrender.com
       # Render injects PORT; server.port already reads it, listed here only so the contract is visible.
       - key: JAVA_OPTS
         value: -XX:MaxRAMPercentage=70 -XX:+UseSerialGC

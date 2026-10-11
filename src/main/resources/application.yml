@@ -1,6 +1,6 @@
 spring:
   application:
-    name: discgolfbagtips-api
+    name: discgolfbagtips-business
 
   # Supabase Postgres. Use the session/pooler connection string in SUPABASE_DB_URL, e.g.
   # jdbc:postgresql://aws-0-<region>.pooler.supabase.com:5432/postgres?sslmode=require
