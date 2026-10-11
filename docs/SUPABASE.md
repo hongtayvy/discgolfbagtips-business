@@ -59,6 +59,36 @@ with *"type vector does not exist"* — a confusing error, since the extension p
 extensions` on every pooled connection, which fixes Flyway and runtime queries together. It is
 harmless on a plain Postgres, where Postgres silently ignores the schema that is not there.
 
+## Lock the tables away from the REST API
+
+Supabase exposes the `public` schema over PostgREST and hands the front end a publishable key so it
+can sign users in. With row level security off, that key is enough to read and write every table
+through the REST API, including session tokens in `spring_session` and saved bags in `bag_profile`.
+The Security Advisor reports this as *RLS Disabled in Public*, with `spring_session` additionally
+flagged for sensitive columns.
+
+The application never uses that route: it connects straight to Postgres as the role that owns the
+tables, and an owner is not subject to row level security. So `V9__enable_row_level_security.sql`
+turns it on for every application table, with no policies, which gives the API roles no rows at all.
+It also revokes their privileges and their default privileges on future tables. Nothing changes for
+the app.
+
+**One table needs a manual step.** `flyway_schema_history` cannot be altered from inside a migration:
+Flyway keeps a second connection idle inside a transaction holding a lock on it for the whole run,
+so the statement waits forever and the application never starts. (This was found the hard way; the
+migration deliberately leaves it alone.) Run this once in the Supabase SQL editor, after the app has
+finished starting:
+
+```sql
+alter table public.flyway_schema_history enable row level security;
+revoke all on public.flyway_schema_history from anon, authenticated;
+```
+
+Worth doing: through the API that table could otherwise be edited, and Flyway trusts it when
+deciding which migrations have already run.
+
+Then **Advisors → Security → Rerun linter** should show no errors.
+
 ## Embedding on a deployed instance
 
 Ollama is not reachable from Render, so a deployed instance needs the hosted provider:
