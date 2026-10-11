@@ -198,4 +198,4 @@ springdoc:
 
 logging:
   level:
-    com.discgolfbagtips.api: INFO
+    com.discgolfbagtips.business: INFO
