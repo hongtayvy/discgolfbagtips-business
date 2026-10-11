@@ -12,9 +12,9 @@
   </parent>
 
   <groupId>com.discgolfbagtips</groupId>
-  <artifactId>discgolfbagtips-api</artifactId>
+  <artifactId>discgolfbagtips-business</artifactId>
   <version>0.1.0-SNAPSHOT</version>
-  <name>discgolfbagtips-api</name>
+  <name>discgolfbagtips-business</name>
   <description>RAG-backed disc golf bag analysis and disc recommendation API</description>
 
   <properties>

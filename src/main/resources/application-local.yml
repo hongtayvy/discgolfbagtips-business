@@ -28,4 +28,4 @@ bagtips:
 
 logging:
   level:
-    com.discgolfbagtips.api: DEBUG
+    com.discgolfbagtips.business: DEBUG
