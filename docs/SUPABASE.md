@@ -107,6 +107,12 @@ The front end's half:
 
 ## Deploying the API to Render
 
+**Create it from the Blueprint, not by hand.** *New → Blueprint* reads `render.yaml`. *New → Web
+Service* does not: it makes a bare service with an empty environment and no health-check path, and
+the app then fails at startup. The startup check names the missing variable, so the log says which
+one, but the cure is to use the Blueprint (or add every variable in `render.yaml` yourself, and set
+the health-check path to `/actuator/health/readiness` under Settings).
+
 See the Render section of the README. The two settings that are easy to miss:
 
 - `SESSION_COOKIE_SAME_SITE=none` (with `SESSION_COOKIE_SECURE=true`). The front end and API are
