@@ -5,9 +5,13 @@ spring:
   # Supabase Postgres. Use the session/pooler connection string in SUPABASE_DB_URL, e.g.
   # jdbc:postgresql://aws-0-<region>.pooler.supabase.com:5432/postgres?sslmode=require
   datasource:
-    url: ${SUPABASE_DB_URL:jdbc:postgresql://localhost:5432/dgbt}
-    username: ${SUPABASE_DB_USER:postgres}
-    password: ${SUPABASE_DB_PASSWORD:postgres}
+    # Deliberately no defaults. A deployed instance that is missing these must refuse to start and
+    # name the variable, rather than quietly trying localhost with a well-known password and failing
+    # later with a connection error that points nowhere near the real cause. Local development gets
+    # its own values from application-local.yml, which `./mvnw spring-boot:run` activates.
+    url: ${SUPABASE_DB_URL}
+    username: ${SUPABASE_DB_USER}
+    password: ${SUPABASE_DB_PASSWORD}
     hikari:
       maximum-pool-size: ${DB_POOL_SIZE:5}
       connection-timeout: 10000
