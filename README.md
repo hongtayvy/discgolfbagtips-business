@@ -143,6 +143,12 @@ Two deliberate choices:
 
 - **Used explicitly rather than via `@Cacheable`**, so a degraded answer can be served without being
   stored. A thirty-second model outage must not become a day of quietly worse recommendations.
+- **Degraded retrieval is never cached, on either endpoint.** When the embedding service fails —
+  briefly, or because the account is out of credits — retrieval falls back to flight-number search
+  and the answer is served but not stored (`CacheEligibility`, one rule shared by `/recommendations`
+  and `/lineup`). Only the model failure used to be checked on the recommendation path, so an
+  embedding outage was cached for 24h and kept serving non-semantic results after the cause was
+  fixed.
 - **Transient failure is distinguished from missing configuration.** "The model timed out" is a blip
   and is never cached; "no API key is configured" is a settled state and caches normally. Conflating
   them meant the recommendation endpoint never cached at all until a key existed — which is exactly
