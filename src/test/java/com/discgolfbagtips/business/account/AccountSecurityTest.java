@@ -46,6 +46,9 @@ class AccountSecurityTest {
     @MockitoBean
     private BagProfileService profileService;
 
+    @MockitoBean
+    private PlayerSettingsService settingsService;
+
     private MockMvc mockMvc;
 
     @BeforeEach
@@ -106,6 +109,31 @@ class AccountSecurityTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.moved").value(2))
                 .andExpect(jsonPath("$.renamed").value(1));
+    }
+
+    @Test
+    void settingsBelongToTheSignedInAccountNotTheSession() throws Exception {
+        when(settingsService.get("user:user-123")).thenReturn(PlayerSettings.EMPTY);
+
+        mockMvc.perform(get("/api/v1/account/settings").with(jwt().jwt(token -> token.subject("user-123"))))
+                .andExpect(status().isOk());
+
+        verify(settingsService).get("user:user-123");
+    }
+
+    @Test
+    void settingsNeedASignedInUser() throws Exception {
+        mockMvc.perform(get("/api/v1/account/settings")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void aCrossOriginFrontEndMayPreflightASettingsPatch() throws Exception {
+        mockMvc.perform(options("/api/v1/account/settings")
+                        .header("Origin", "http://localhost:5173")
+                        .header("Access-Control-Request-Method", "PATCH")
+                        .header("Access-Control-Request-Headers", "authorization,content-type"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Methods", containsString("PATCH")));
     }
 
     @Test
