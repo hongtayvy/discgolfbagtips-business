@@ -2,6 +2,7 @@ package com.discgolfbagtips.business.recommendation;
 
 import com.discgolfbagtips.business.cache.AnalysisCache;
 import com.discgolfbagtips.business.cache.AnalysisCacheKey;
+import com.discgolfbagtips.business.cache.CacheEligibility;
 import com.discgolfbagtips.business.common.NotFoundException;
 import com.discgolfbagtips.business.recommendation.dto.BagAnalysisRequest;
 import com.discgolfbagtips.business.recommendation.dto.BagLineupResponse;
@@ -49,11 +50,13 @@ public class RecommendationController {
         var cached = analysisCache.get(
                 AnalysisCacheKey.of("recommendations", request),
                 () -> recommendationService.recommend(request, sessionId),
-                // A transient failure is served but never stored: a brief model outage must not become
-                // a day of quietly degraded recommendations. A missing API key is a settled state
-                // rather than a blip, so those responses do cache.
+                // A degraded answer is served but never stored — see CacheEligibility. That covers a
+                // transient model failure and, just as importantly, retrieval that fell back because
+                // the embedding service was unavailable. A missing API key is a settled state rather
+                // than a blip, so those responses do cache.
                 result -> result.explainability() == null
-                        || !result.explainability().generation().transientFailure());
+                        || CacheEligibility.recommendation(result.explainability().retrievalMode(),
+                                result.explainability().generation().transientFailure()));
 
         RecommendationResponse response = cached.value();
         if (cached.fromCache()) {
@@ -78,7 +81,7 @@ public class RecommendationController {
                 AnalysisCacheKey.of("lineup", request),
                 () -> lineupService.buildLineup(request, sessionId),
                 result -> result.explainability() == null
-                        || !result.explainability().retrievalMode().equals("FLIGHT_NUMBER_FALLBACK"));
+                        || CacheEligibility.lineup(result.explainability().retrievalMode()));
 
         BagLineupResponse response = cached.value();
         if (cached.fromCache()) {
