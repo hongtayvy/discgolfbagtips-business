@@ -148,7 +148,22 @@ Two deliberate choices:
   them meant the recommendation endpoint never cached at all until a key existed — which is exactly
   what the first version did.
 
-Cache health is on `GET /api/v1/status` (`entries`, `hits`, `misses`, `hitRatePercent`).
+### Query-vector cache
+
+Below the analysis cache sits a second one for the embedding itself (`QueryEmbeddingCache`). The
+analysis cache keys on the whole request, so changing a brand filter or switching bag models is a miss
+there even though neither affects the passage that gets embedded. That passage is built from the gap
+and the player profile only; filters are applied afterwards, inside the vector search. Those requests
+rebuild byte-identical text, and without this cache they pay for the same embedding again. The lineup
+and recommendation calls for one bag also share gaps.
+
+It is keyed on the model name plus the exact passage, so a hit is always correct and switching models
+can never serve the old model's vectors. Failures are never stored, the free local hashing vectorizer
+bypasses it, and concurrent requests for the same passage share one model call. It reuses
+`bagtips.cache.enabled`, `ttl` and `max-entries`.
+
+Cache health is on `GET /api/v1/status`: `cache` is the analysis cache and `embeddingCache` is this
+one (`entries`, `hits`, `misses`, `hitRatePercent`).
 
 **On Cloudflare KV:** complementary, not an alternative. Caffeine sits in the API, costs nothing and
 has no quota, but is lost when a free-tier dyno spins down. KV sits at the edge and avoids the hop to

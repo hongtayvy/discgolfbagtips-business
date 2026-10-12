@@ -1,6 +1,7 @@
 package com.discgolfbagtips.business.embedding;
 
 import com.discgolfbagtips.business.analysis.BagAnalysis;
+import com.discgolfbagtips.business.cache.QueryEmbeddingCache;
 import com.discgolfbagtips.business.analysis.BagGap;
 import com.discgolfbagtips.business.catalog.Disc;
 import com.discgolfbagtips.business.catalog.PlasticType;
@@ -30,12 +31,14 @@ public class EmbeddingService {
     private final String queryPrefix;
     private final String documentPrefix;
     private final String providerLabel;
+    private final QueryEmbeddingCache queryCache;
 
     public EmbeddingService(HuggingFaceEmbeddingClient huggingFaceClient, OllamaEmbeddingClient ollamaClient,
             LocalHashEmbeddingClient localClient, EmbeddingTextBuilder textBuilder,
-            BagTipsProperties properties) {
+            BagTipsProperties properties, QueryEmbeddingCache queryCache) {
         BagTipsProperties.Embedding config = properties.embedding();
         this.textBuilder = textBuilder;
+        this.queryCache = queryCache;
         this.batchSize = Math.max(1, config.batchSize());
         this.queryPrefix = config.queryPrefix() == null ? "" : config.queryPrefix();
         this.documentPrefix = config.documentPrefix() == null ? "" : config.documentPrefix();
@@ -81,11 +84,20 @@ public class EmbeddingService {
         return embeddings;
     }
 
-    /** Embeds the request side: the gap, the player and the day, written the same way as a disc. */
+    /**
+     * Embeds the request side: the gap, the player and the day, written the same way as a disc.
+     *
+     * <p>Identical passages are served from {@link QueryEmbeddingCache}. The local hashing stand-in
+     * bypasses it: that vectorizer is free, so caching it would only flatter the hit rate.
+     */
     public QueryEmbedding embedGap(BagGap gap, BagAnalysis analysis, PlayerProfile profile,
             WeatherCondition weather) {
         String text = textBuilder.forGap(gap, analysis, profile, weather);
-        return new QueryEmbedding(text, embedOne(queryPrefix + text));
+        String input = queryPrefix + text;
+        EmbeddingVector vector = client.stubbed()
+                ? embedOne(input)
+                : queryCache.get(client.model(), input, () -> embedOne(input));
+        return new QueryEmbedding(text, vector);
     }
 
     public List<EmbeddingVector> embedBatched(List<String> texts) {
