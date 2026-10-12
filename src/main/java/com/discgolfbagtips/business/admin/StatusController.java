@@ -1,6 +1,7 @@
 package com.discgolfbagtips.business.admin;
 
 import com.discgolfbagtips.business.cache.AnalysisCache;
+import com.discgolfbagtips.business.cache.QueryEmbeddingCache;
 import com.discgolfbagtips.business.catalog.DiscCatalogService;
 import com.discgolfbagtips.business.catalog.sync.DiscCatalogSyncService;
 import com.discgolfbagtips.business.catalog.sync.SyncReport;
@@ -28,16 +29,18 @@ public class StatusController {
     private final DiscVectorStore vectorStore;
     private final ChatModelClient chatModelClient;
     private final AnalysisCache analysisCache;
+    private final QueryEmbeddingCache queryEmbeddingCache;
 
     public StatusController(DiscCatalogService catalogService, DiscCatalogSyncService syncService,
             EmbeddingService embeddingService, DiscVectorStore vectorStore, ChatModelClient chatModelClient,
-            AnalysisCache analysisCache) {
+            AnalysisCache analysisCache, QueryEmbeddingCache queryEmbeddingCache) {
         this.catalogService = catalogService;
         this.syncService = syncService;
         this.embeddingService = embeddingService;
         this.vectorStore = vectorStore;
         this.chatModelClient = chatModelClient;
         this.analysisCache = analysisCache;
+        this.queryEmbeddingCache = queryEmbeddingCache;
     }
 
     @GetMapping("/status")
@@ -53,11 +56,16 @@ public class StatusController {
                                 : stats.lastEmbeddedAt().toString()),
                 new GenerationStatus(chatModelClient.provider(), chatModelClient.model(),
                         chatModelClient.available()),
-                analysisCache.stats());
+                analysisCache.stats(),
+                queryEmbeddingCache.stats());
     }
 
+    /**
+     * @param cache          whole-analysis cache: a repeat of the exact same request
+     * @param embeddingCache query-vector cache: identical passages, even across different requests
+     */
     public record PipelineStatus(long activeDiscs, SyncReport lastCatalogSync, EmbeddingStatus embedding,
-            GenerationStatus generation, AnalysisCache.Stats cache) {
+            GenerationStatus generation, AnalysisCache.Stats cache, AnalysisCache.Stats embeddingCache) {
     }
 
     public record EmbeddingStatus(String provider, String model, int dimensions, boolean stubbed,
